@@ -150,7 +150,7 @@
 
     <script>
         // LINK NGROK LU YANG UDAH DIBENERIN (tanpa spasi di depan)
-        const NGROK_URL = "https://nonaxiomatic-supermarvelously-griffin.ngrok-free.dev/api/chat"; 
+        const NGROK_URL = "https://e57fe8d069c1d3.lhr.life/api/chat"; 
         
         // PENTING: Ini nama model yang harus sesuai sama di Ollama lu!
         const NAMA_MODEL = "hf.co/bartowski/huihui-ai_gemma-3-1b-it-abliterated-GGUF:Q8_0"; 
@@ -190,8 +190,7 @@
                 const response = await fetch(NGROK_URL, {
                     method: "POST",
                     headers: {
-                        "Content-Type": "application/json",
-                        "ngrok-skip-browser-warning": "69420" 
+                        "Content-Type": "application/json"
                     },
                     body: JSON.stringify({
                         model: NAMA_MODEL,
@@ -228,4 +227,5 @@
         }
     </script>
 </body>
+
 </html>
