@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Lokal Gua ✨</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --chat-bg: #1e293b;
+            --user-bubble: linear-gradient(135deg, #a855f7, #ec4899);
+            --ai-bubble: #334155;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+
+        body {
+            font-family: 'Segoe UI', Inter, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        .header {
+            text-align: center;
+            padding: 15px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            background: rgba(30, 41, 59, 0.8);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid #334155;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .header span {
+            background: linear-gradient(135deg, #06b6d4, #a855f7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        #chatbox {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            scroll-behavior: smooth;
+        }
+
+        .message {
+            max-width: 80%;
+            padding: 12px 18px;
+            border-radius: 20px;
+            line-height: 1.5;
+            word-wrap: break-word;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .user-msg {
+            background: var(--user-bubble);
+            align-self: flex-end;
+            border-bottom-right-radius: 4px;
+            box-shadow: 0 4px 15px rgba(236, 72, 153, 0.2);
+        }
+
+        .ai-msg {
+            background: var(--ai-bubble);
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .input-area {
+            padding: 20px;
+            background: var(--chat-bg);
+            display: flex;
+            gap: 10px;
+            border-top: 1px solid #334155;
+        }
+
+        input {
+            flex: 1;
+            padding: 15px 20px;
+            border-radius: 30px;
+            border: 1px solid #475569;
+            background: #0f172a;
+            color: white;
+            font-size: 1rem;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        input:focus {
+            border-color: #a855f7;
+            box-shadow: 0 0 10px rgba(168, 85, 247, 0.3);
+        }
+
+        button {
+            padding: 15px 25px;
+            border-radius: 30px;
+            border: none;
+            background: var(--user-bubble);
+            color: white;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .typing {
+            font-style: italic;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            align-self: flex-start;
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">✨ <span>Gemma AI Lokal</span> ✨</div>
+    
+    <div id="chatbox">
+        <div class="message ai-msg">Halo bang! Gua AI lokal lu yang jalan di laptop. Mau nanya apa hari ini? 🚀</div>
+    </div>
+
+    <div class="input-area">
+        <input type="text" id="userInput" placeholder="Spill pertanyaan lu di sini..." onkeypress="handleEnter(event)">
+        <button id="sendBtn" onclick="kirimPesan()">Send</button>
+    </div>
+
+    <script>
+        // LINK NGROK LU YANG UDAH DIBENERIN (tanpa spasi di depan)
+        const NGROK_URL = "https://nonaxiomatic-supermarvelously-griffin.ngrok-free.dev/api/chat"; 
+        
+        // PENTING: Ini nama model yang harus sesuai sama di Ollama lu!
+        const NAMA_MODEL = "hf.co/bartowski/huihui-ai_gemma-3-1b-it-abliterated-GGUF:Q8_0"; 
+
+        // Fungsi biar bisa pencet Enter buat ngirim
+        function handleEnter(event) {
+            if (event.key === 'Enter') {
+                kirimPesan();
+            }
+        }
+
+        async function kirimPesan() {
+            const inputField = document.getElementById("userInput");
+            const chatbox = document.getElementById("chatbox");
+            const sendBtn = document.getElementById("sendBtn");
+            const text = inputField.value.trim();
+            
+            if (!text) return;
+
+            // Nampilin pesan User
+            chatbox.innerHTML += `<div class="message user-msg">${text}</div>`;
+            inputField.value = "";
+            
+            // Nampilin indikator loading
+            const loadingId = "loading-" + Date.now();
+            chatbox.innerHTML += `<div id="${loadingId}" class="typing">Gemma lagi ngetik... 💭</div>`;
+            
+            // Auto scroll ke paling bawah
+            chatbox.scrollTop = chatbox.scrollHeight;
+            
+            // Matiin tombol sementara biar ga dispam
+            inputField.disabled = true;
+            sendBtn.disabled = true;
+
+            try {
+                // Format request khusus buat Ollama API
+                const response = await fetch(NGROK_URL, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "ngrok-skip-browser-warning": "69420" 
+                    },
+                    body: JSON.stringify({
+                        model: NAMA_MODEL,
+                        messages: [{ role: "user", content: text }],
+                        stream: false
+                    })
+                });
+
+                const data = await response.json();
+                
+                // Hapus tulisan "lagi ngetik..."
+                document.getElementById(loadingId).remove();
+                
+                // Nampilin balasan AI dari Ollama
+                if(data.message && data.message.content) {
+                    chatbox.innerHTML += `<div class="message ai-msg">${data.message.content.replace(/\n/g, '<br>')}</div>`;
+                } else {
+                    chatbox.innerHTML += `<div class="message ai-msg" style="color:#ef4444;">Waduh, format jawaban AI-nya aneh nih.</div>`;
+                }
+                
+            } catch (error) {
+                document.getElementById(loadingId).remove();
+                chatbox.innerHTML += `<div class="message ai-msg" style="background:#7f1d1d; color:white;">
+                    <b>Koneksi Putus! 😭</b><br>Pastiin: <br>1. Laptop lu nyala<br>2. CMD Ngrok lu jalan<br>3. Ollama lu lagi aktif.
+                </div>`;
+                console.error(error);
+            }
+
+            // Nyalain tombol lagi & auto scroll
+            inputField.disabled = false;
+            sendBtn.disabled = false;
+            inputField.focus();
+            chatbox.scrollTop = chatbox.scrollHeight;
+        }
+    </script>
+</body>
+</html>
